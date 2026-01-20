@@ -1,6 +1,5 @@
 package com.example;
 
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 //TIP To <b>Run</b> code, press <shortcut actionId="Run"/> or
