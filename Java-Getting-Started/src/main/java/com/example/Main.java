@@ -1,5 +1,6 @@
 package com.example;
 
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 //TIP To <b>Run</b> code, press <shortcut actionId="Run"/> or
@@ -15,7 +16,7 @@ public class Main {
         for (int i = 1; i <= 5; i++) {
             //TIP Press <shortcut actionId="Debug"/> to start debugging your code. We have set one <icon src="AllIcons.Debugger.Db_set_breakpoint"/> breakpoint
             // for you, but you can always add more by pressing <shortcut actionId="ToggleLineBreakpoint"/>.
-            LOGGER.info("i = " + i);
+            LOGGER.log(java.util.logging.Level.INFO, "i = {0}", new Object[]{i});
         }
     }
 }
