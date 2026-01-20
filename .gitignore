@@ -5,6 +5,7 @@
 #注释 #：开头加#是注释，不会生效；
 #反忽略 !：排除特定文件（比如先忽略*.txt，再用!readme.txt保留readme.txt）。
 
+#忽略参考地址 https://github.com/github/gitignore
 
 # IDE工具生成的文件
 .idea/
