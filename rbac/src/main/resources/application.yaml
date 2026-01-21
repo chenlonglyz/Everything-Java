@@ -1,0 +1,11 @@
+spring:
+  application:
+    name: rbac
+  data:
+    redis:
+      host: localhost
+      port: 6379
+      password: foobared
+      timeout: 10000
+      database: 0
+
