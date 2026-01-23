@@ -5,10 +5,17 @@ CREATE TABLE `rbac_resource` (
                                  `resource_code` varchar(128) NOT NULL COMMENT '资源编码（如：sys:user:list）',
                                  `resource_name` varchar(64) NOT NULL COMMENT '资源名称',
                                  `resource_type` varchar(32) NOT NULL COMMENT '资源类型：API/PAGE/BUTTON',
+                                 CONSTRAINT `chk_resource_type`
+                                     CHECK (`resource_type` IN ('API','PAGE','BUTTON')),
                                  `parent_id` bigint DEFAULT 0 COMMENT '父资源ID',
                                  `level` tinyint NOT NULL DEFAULT 1 COMMENT '层级（1-3层）',
                                  `full_path` varchar(512) DEFAULT NULL COMMENT '完整路径（如：sys:system:user）',
                                  `request_method` varchar(16) DEFAULT NULL COMMENT 'HTTP方法：GET/POST/PUT/DELETE',
+                                 CONSTRAINT `chk_request_method`
+                                     CHECK (
+                                         `request_method` IS NULL
+                                             OR `request_method` IN ('GET','POST','PUT','DELETE','PATCH','OPTIONS')
+                                         ),
                                  `request_path` varchar(256) DEFAULT NULL COMMENT '接口路径（如：/api/v1/user/list）',
                                  `api_ids` varchar(1024) DEFAULT NULL COMMENT '关联的API资源ID，逗号分隔',
                                  `status` tinyint NOT NULL DEFAULT 1 COMMENT '状态：0禁用 1启用',
@@ -97,66 +104,114 @@ CREATE TABLE `rbac_cache_log` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='RBAC缓存刷新日志';
 
 -- 7. 资源层级触发器（限制嵌套深度+自动生成full_path）
-DELIMITER //
-DROP TRIGGER IF EXISTS `trg_rbac_resource_insert`//
-CREATE TRIGGER `trg_rbac_resource_insert` BEFORE INSERT ON `rbac_resource`
+CREATE TRIGGER trg_rbac_resource_insert
+    BEFORE INSERT ON rbac_resource
     FOR EACH ROW
 BEGIN
-    -- 1. 初始化层级和全路径
-    IF NEW.`parent_id` = 0 THEN
-    SET NEW.`level` = 1;
-    SET NEW.`full_path` = NEW.`resource_code`;
+    -- 父资源信息
+    DECLARE parent_level TINYINT;
+  DECLARE parent_type VARCHAR(32);
+  DECLARE parent_full_path VARCHAR(512);
+
+  -- 1. 根资源（parent_id = 0）
+  IF NEW.parent_id = 0 THEN
+    SET NEW.level = 1;
+    SET NEW.full_path = NEW.resource_code;
+
+  -- 2. 非根资源
     ELSE
-    -- 查询父级信息
-    SELECT `resource_type`, `level`, `full_path` INTO @parent_type, @parent_level, @parent_full_path
-    FROM `rbac_resource` WHERE `id` = NEW.`parent_id`;
+    -- 2.1 查询父资源
+    SELECT resource_type, level, full_path
+    INTO parent_type, parent_level, parent_full_path
+    FROM rbac_resource
+    WHERE id = NEW.parent_id;
 
-    -- 2. 校验嵌套深度
-    IF NEW.`resource_type` = 'PAGE' THEN
-      SET NEW.`level` = @parent_level + 1;
-      IF NEW.`level` > 3 THEN
-        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = '页面资源嵌套深度不能超过3层';
-END IF;
-ELSEIF NEW.`resource_type` = 'BUTTON' THEN
-      IF @parent_type NOT IN ('PAGE', 'API') THEN
-        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = '按钮资源只能挂在页面或API下';
-END IF;
-      SET NEW.`level` = @parent_level + 1;
-      IF NEW.`level` > 2 THEN
-        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = '按钮资源嵌套深度不能超过2层';
-END IF;
-    ELSEIF NEW.`resource_type` = 'API' THEN
-      SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'API资源不能设置父级（parent_id必须为0）';
+    -- 2.2 父资源不存在，直接失败（防止脏数据）
+    IF parent_level IS NULL THEN
+      SIGNAL SQLSTATE '45000'
+      SET MESSAGE_TEXT = '父资源不存在';
 END IF;
 
-    -- 3. 生成全路径
-    SET NEW.`full_path` = CONCAT(@parent_full_path, ':', NEW.`resource_code`);
+-- 2.3 根据资源类型校验层级与挂载规则
+IF NEW.resource_type = 'PAGE' THEN
+      SET NEW.level = parent_level + 1;
+      IF NEW.level > 3 THEN
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = '页面资源嵌套深度不能超过3层';
 END IF;
 
-  -- 4. API资源强制校验
-  IF NEW.`resource_type` = 'API' THEN
-    IF NEW.`request_method` IS NULL OR NEW.`request_path` IS NULL THEN
-      SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'API资源必须填写request_method和request_path';
+    ELSEIF NEW.resource_type = 'BUTTON' THEN
+      IF parent_type NOT IN ('PAGE','API') THEN
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = '按钮资源只能挂在页面或API下';
 END IF;
+      SET NEW.level = parent_level + 1;
+      IF NEW.level > 2 THEN
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = '按钮资源嵌套深度不能超过2层';
 END IF;
-END //
 
-DROP TRIGGER IF EXISTS `trg_rbac_resource_update`//
-CREATE TRIGGER `trg_rbac_resource_update` BEFORE UPDATE ON `rbac_resource`
+    ELSEIF NEW.resource_type = 'API' THEN
+      SIGNAL SQLSTATE '45000'
+      SET MESSAGE_TEXT = 'API资源不能设置父级';
+END IF;
+
+    -- 2.4 自动生成完整路径
+    SET NEW.full_path = CONCAT(parent_full_path, ':', NEW.resource_code);
+END IF;
+
+  -- 3. API 资源必须具备 method + path
+  IF NEW.resource_type = 'API' THEN
+    IF NEW.request_method IS NULL OR NEW.request_path IS NULL THEN
+      SIGNAL SQLSTATE '45000'
+      SET MESSAGE_TEXT = 'API资源必须填写request_method和request_path';
+END IF;
+END IF;
+END;
+
+
+
+CREATE TRIGGER trg_rbac_resource_update
+    BEFORE UPDATE ON rbac_resource
     FOR EACH ROW
 BEGIN
-    -- 父级变更时重新计算层级和全路径
-    IF NEW.`parent_id` != OLD.`parent_id` THEN
-    IF NEW.`parent_id` = 0 THEN
-      SET NEW.`level` = 1;
-      SET NEW.`full_path` = NEW.`resource_code`;
+    DECLARE parent_level TINYINT;
+  DECLARE parent_type VARCHAR(32);
+  DECLARE parent_full_path VARCHAR(512);
+
+  -- 1. 父节点或编码变化时，重新计算路径
+  IF NEW.parent_id != OLD.parent_id
+     OR NEW.resource_code != OLD.resource_code THEN
+
+    IF NEW.parent_id = 0 THEN
+      SET NEW.level = 1;
+      SET NEW.full_path = NEW.resource_code;
     ELSE
-    SELECT `level`, `full_path` INTO @parent_level, @parent_full_path
-    FROM `rbac_resource` WHERE `id` = NEW.`parent_id`;
-    SET NEW.`level` = @parent_level + 1;
-      SET NEW.`full_path` = CONCAT(@parent_full_path, ':', NEW.`resource_code`);
+    SELECT resource_type, level, full_path
+    INTO parent_type, parent_level, parent_full_path
+    FROM rbac_resource
+    WHERE id = NEW.parent_id;
+
+    IF parent_level IS NULL THEN
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = '父资源不存在';
+END IF;
+
+SET NEW.level = parent_level + 1;
+      SET NEW.full_path = CONCAT(parent_full_path, ':', NEW.resource_code);
 END IF;
 END IF;
-END //
-DELIMITER ;
+
+  -- 2. API 资源规则强制校验
+  IF NEW.resource_type = 'API' THEN
+    IF NEW.parent_id != 0 THEN
+      SIGNAL SQLSTATE '45000'
+      SET MESSAGE_TEXT = 'API资源不能设置父级';
+END IF;
+    IF NEW.request_method IS NULL OR NEW.request_path IS NULL THEN
+      SIGNAL SQLSTATE '45000'
+      SET MESSAGE_TEXT = 'API资源必须填写request_method和request_path';
+END IF;
+END IF;
+END;
 
