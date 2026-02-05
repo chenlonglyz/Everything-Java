@@ -1,0 +1,163 @@
+package com.example.rbac.dto.request;
+
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
+
+import com.example.rbac.enums.ResourceStatusEnum;
+
+public class ResourceCreateDTO {
+    /**
+     * 资源编码（如：sys:user:list）
+     */
+    @NotBlank(message = "资源编码不能为空")
+    @Size(max = 128, message = "资源编码长度不能超过128")
+    private String resourceCode;
+
+    /**
+     * 资源名称
+     */
+    @NotBlank(message = "资源名称不能为空")
+    @Size(max = 64, message = "资源名称长度不能超过64")
+    private String resourceName;
+
+    /**
+     * 资源类型：API/PAGE/BUTTON
+     */
+    @NotBlank(message = "资源类型不能为空")
+    private String resourceType;
+
+    /**
+     * 父资源ID
+     */
+    private Long parentId = 0L;
+
+    /**
+     * 层级（1-3层）
+     */
+    @NotNull(message = "层级不能为空")
+    private Integer level = 1;
+
+    /**
+     * 完整路径（如：sys:system:user）
+     */
+    @Size(max = 512, message = "完整路径长度不能超过512")
+    private String fullPath;
+
+    /**
+     * HTTP方法：GET/POST/PUT/DELETE
+     */
+    @Size(max = 16, message = "HTTP方法长度不能超过16")
+    private String requestMethod;
+
+    /**
+     * 接口路径（如：/api/v1/user/list）
+     */
+    @Size(max = 256, message = "接口路径长度不能超过256")
+    private String requestPath;
+
+    /**
+     * 关联的API资源ID，逗号分隔
+     */
+    @Size(max = 1024, message = "关联API资源ID长度不能超过1024")
+    private String apiIds;
+
+    /**
+     * 状态：0禁用 1启用
+     */
+    @NotNull(message = "状态不能为空")
+    private Integer status = ResourceStatusEnum.ENABLED.getCode();
+
+    /**
+     * 排序
+     */
+    private Integer sort = 0;
+
+    public @NotBlank(message = "资源编码不能为空") @Size(max = 128, message = "资源编码长度不能超过128") String getResourceCode() {
+        return resourceCode;
+    }
+
+    public void setResourceCode(@NotBlank(message = "资源编码不能为空") @Size(max = 128, message = "资源编码长度不能超过128") String resourceCode) {
+        this.resourceCode = resourceCode;
+    }
+
+    public @NotBlank(message = "资源名称不能为空") @Size(max = 64, message = "资源名称长度不能超过64") String getResourceName() {
+        return resourceName;
+    }
+
+    public void setResourceName(@NotBlank(message = "资源名称不能为空") @Size(max = 64, message = "资源名称长度不能超过64") String resourceName) {
+        this.resourceName = resourceName;
+    }
+
+    public @NotBlank(message = "资源类型不能为空") String getResourceType() {
+        return resourceType;
+    }
+
+    public void setResourceType(@NotBlank(message = "资源类型不能为空") String resourceType) {
+        this.resourceType = resourceType;
+    }
+
+    public Long getParentId() {
+        return parentId;
+    }
+
+    public void setParentId(Long parentId) {
+        this.parentId = parentId;
+    }
+
+    public @NotNull(message = "层级不能为空") Integer getLevel() {
+        return level;
+    }
+
+    public void setLevel(@NotNull(message = "层级不能为空") Integer level) {
+        this.level = level;
+    }
+
+    public @Size(max = 512, message = "完整路径长度不能超过512") String getFullPath() {
+        return fullPath;
+    }
+
+    public void setFullPath(@Size(max = 512, message = "完整路径长度不能超过512") String fullPath) {
+        this.fullPath = fullPath;
+    }
+
+    public @Size(max = 16, message = "HTTP方法长度不能超过16") String getRequestMethod() {
+        return requestMethod;
+    }
+
+    public void setRequestMethod(@Size(max = 16, message = "HTTP方法长度不能超过16") String requestMethod) {
+        this.requestMethod = requestMethod;
+    }
+
+    public @Size(max = 256, message = "接口路径长度不能超过256") String getRequestPath() {
+        return requestPath;
+    }
+
+    public void setRequestPath(@Size(max = 256, message = "接口路径长度不能超过256") String requestPath) {
+        this.requestPath = requestPath;
+    }
+
+    public @Size(max = 1024, message = "关联API资源ID长度不能超过1024") String getApiIds() {
+        return apiIds;
+    }
+
+    public void setApiIds(@Size(max = 1024, message = "关联API资源ID长度不能超过1024") String apiIds) {
+        this.apiIds = apiIds;
+    }
+
+    public @NotNull(message = "状态不能为空") Integer getStatus() {
+        return status;
+    }
+
+    public void setStatus(@NotNull(message = "状态不能为空") Integer status) {
+        this.status = status;
+    }
+
+    public Integer getSort() {
+        return sort;
+    }
+
+    public void setSort(Integer sort) {
+        this.sort = sort;
+    }
+}

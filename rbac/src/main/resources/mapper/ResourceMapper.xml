@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.rbac.mapper.ResourceMapper">
+
+    <!-- 分页查询资源（使用索引优化） -->
+    <select id="selectResourcePage" resultType="com.example.rbac.entity.Resource">
+        SELECT r.* FROM rbac_resource r
+        WHERE 1=1
+        <if test="params.keyword != null and params.keyword != ''">
+            AND (r.resource_code LIKE CONCAT('%', #{params.keyword}, '%')
+            OR r.resource_name LIKE CONCAT('%', #{params.keyword}, '%'))
+        </if>
+        <if test="params.resourceType != null and params.resourceType != ''">
+            AND r.resource_type = #{params.resourceType}
+        </if>
+        <if test="params.status != null and params.status != ''">
+            AND r.status = #{params.status}
+        </if>
+        <!-- 使用索引字段排序 -->
+        ORDER BY r.level ASC, r.sort ASC, r.create_time DESC
+    </select>
+
+    <!-- 根据角色ID查询资源（联合索引优化） -->
+    <select id="selectResourceByRoleIds" resultType="com.example.rbac.entity.Resource">
+        SELECT DISTINCT r.* FROM rbac_resource r
+        INNER JOIN rbac_role_resource rr ON r.id = rr.resource_id
+        WHERE rr.role_id IN
+        <foreach collection="roleIds" item="roleId" open="(" separator="," close=")">
+            #{roleId}
+        </foreach>
+        AND r.status = 1
+        <!-- 使用索引优化查询 -->
+        ORDER BY r.level ASC, r.sort ASC
+    </select>
+
+    <!-- 根据用户ID查询权限编码（缓存热点数据） -->
+    <select id="selectPermCodesByUserId" resultType="java.lang.String">
+        SELECT DISTINCT r.resource_code FROM rbac_resource r
+        INNER JOIN rbac_role_resource rr ON r.id = rr.resource_id
+        INNER JOIN rbac_user_role ur ON rr.role_id = ur.role_id
+        WHERE ur.user_id = #{userId}
+        AND ur.status = 1
+        AND r.status = 1
+        <!-- 使用索引优化 -->
+        ORDER BY r.resource_code ASC
+    </select>
+
+    <!-- 查询资源树形结构（递归优化） -->
+    <select id="selectResourceTree" resultType="com.example.rbac.entity.Resource">
+        SELECT r.* FROM rbac_resource r
+        WHERE r.parent_id = #{parentId}
+          AND r.status = 1
+        ORDER BY r.sort ASC
+    </select>
+
+</mapper>

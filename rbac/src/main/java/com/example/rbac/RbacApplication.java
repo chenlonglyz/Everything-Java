@@ -2,17 +2,16 @@ package com.example.rbac;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
-
-import com.example.rbac.config.EnvInitializer;
+import org.springframework.cache.annotation.EnableCaching;
 
 @SpringBootApplication
+@EnableCaching // 必须开启，否则Spring Cache注解无效
+@MapperScan("com.example.rbac.mapper")
+@ConfigurationPropertiesScan
 public class RbacApplication {
 
 	public static void main(String[] args) {
-		//SpringApplication.run(RbacApplication.class, args);
-		SpringApplication app = new SpringApplication(RbacApplication.class);
-		app.addInitializers(new EnvInitializer());
-		app.run(args);
+		SpringApplication.run(RbacApplication.class, args);
 	}
 
 }

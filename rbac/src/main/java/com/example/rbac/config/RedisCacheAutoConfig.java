@@ -1,11 +1,19 @@
 package com.example.rbac.config;
 
+import java.time.Duration;
+
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.data.redis.cache.RedisCacheConfiguration;
+import org.springframework.data.redis.cache.RedisCacheManager;
+import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.redis.serializer.RedisSerializationContext;
+import org.springframework.data.redis.serializer.RedisSerializer;
+import org.springframework.data.redis.serializer.StringRedisSerializer;
 
 import com.example.rbac.cache.RedisCacheServiceImpl;
 import com.example.rbac.enums.CacheTypeEnum;
@@ -38,5 +46,29 @@ public class RedisCacheAutoConfig {
     @Bean
     public CacheTypeEnum cacheType() {
         return CacheTypeEnum.REDIS;
+    }
+
+    /**
+     * 配置Redis缓存管理器（设置过期时间，防止缓存雪崩）
+     */
+    @Bean
+    public RedisCacheManager cacheManager(RedisConnectionFactory connectionFactory) {
+        // 配置序列化
+        RedisCacheConfiguration config = RedisCacheConfiguration.defaultCacheConfig()
+                .entryTtl(Duration.ofHours(2)) // 缓存过期时间2小时
+                .serializeKeysWith(RedisSerializationContext.SerializationPair.fromSerializer(new StringRedisSerializer()))
+                .serializeValuesWith(
+                        RedisSerializationContext.SerializationPair
+                                .fromSerializer(RedisSerializer.json())
+                )
+                .disableCachingNullValues(); // 禁止缓存null值
+
+        // 针对不同缓存设置不同过期时间
+        RedisCacheManager.RedisCacheManagerBuilder builder = RedisCacheManager.builder(connectionFactory)
+                .cacheDefaults(config)
+                .withCacheConfiguration("rbac:perm", RedisCacheConfiguration.defaultCacheConfig().entryTtl(Duration.ofHours(1)))
+                .withCacheConfiguration("rbac:resource", RedisCacheConfiguration.defaultCacheConfig().entryTtl(Duration.ofMinutes(30)));
+
+        return builder.build();
     }
 }

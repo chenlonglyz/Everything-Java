@@ -1,8 +1,10 @@
 package com.example.rbac.config;
 
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
+import org.springframework.cache.caffeine.CaffeineCacheManager;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
@@ -50,5 +52,20 @@ public class CaffeineCacheAutoConfig {
     @ConditionalOnMissingBean(name = "cacheType")
     public CacheTypeEnum cacheTypeCaffeine() {
         return CacheTypeEnum.CAFFEINE;
+    }
+
+    @Bean
+    public CaffeineCacheManager caffeineCacheManager() {
+        CaffeineCacheManager cacheManager = new CaffeineCacheManager();
+        // 配置Caffeine缓存规则
+        Caffeine<Object, Object> caffeine = Caffeine.newBuilder()
+                .expireAfterWrite(1, TimeUnit.HOURS) // 写入后1小时过期
+                .maximumSize(10000) // 最大缓存条目数（防止内存溢出）
+                .recordStats(); // 记录缓存统计信息（命中率等）
+
+        cacheManager.setCaffeine(caffeine);
+        // 指定缓存名称（和RedisCacheManager的value对应）
+        cacheManager.setCacheNames(List.of("rbac:perm", "rbac:resource"));
+        return cacheManager;
     }
 }
