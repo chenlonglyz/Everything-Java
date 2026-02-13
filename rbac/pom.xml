@@ -5,7 +5,7 @@
 	<parent>
 		<groupId>org.springframework.boot</groupId>
 		<artifactId>spring-boot-starter-parent</artifactId>
-		<version>4.0.1</version>
+		<version>3.3.5</version>
 		<relativePath/> <!-- lookup parent from repository -->
 	</parent>
 	<groupId>com.example</groupId>
@@ -83,8 +83,8 @@
 		<!-- MyBatis-Plus -->
 		<dependency>
 			<groupId>com.baomidou</groupId>
-			<artifactId>mybatis-plus-boot-starter</artifactId>
-			<version>3.5.3.1</version>
+			<artifactId>mybatis-plus-spring-boot3-starter</artifactId>
+			<version>3.5.5</version>
 		</dependency>
 
 	</dependencies>

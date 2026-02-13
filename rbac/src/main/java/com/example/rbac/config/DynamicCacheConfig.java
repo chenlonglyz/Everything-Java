@@ -1,11 +1,13 @@
 package com.example.rbac.config;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.cache.Cache;
 import org.springframework.cache.CacheManager;
 import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Primary;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.serializer.RedisSerializer;
@@ -41,10 +43,17 @@ public class DynamicCacheConfig {
         return redisTemplate;
     }
 
+
     @Bean
-    public CacheDegradeProxy cacheDegradeProxy(RedisHealthIndicator redisHealthIndicator,
+    @ConditionalOnBean(RedisTemplate.class)
+    public RedisCacheServiceImpl redisCacheService(RedisTemplate<String, Object> redisTemplate) {
+        return new RedisCacheServiceImpl(redisTemplate);
+    }
+
+    @Bean
+    public CacheDegradeProxy cacheDegradeProxy(@Autowired(required = false) RedisHealthIndicator redisHealthIndicator,
                                                CaffeineCacheServiceImpl caffeineCacheService,
-                                               RedisCacheServiceImpl redisCacheService) {
+                                               @Autowired(required = false)RedisCacheServiceImpl redisCacheService) {
         CacheDegradeProxy proxy = new CacheDegradeProxy(caffeineCacheService);
         proxy.setRedisCacheService(redisCacheService);
         proxy.setRedisHealthIndicator(redisHealthIndicator);
@@ -53,6 +62,7 @@ public class DynamicCacheConfig {
 
     // ========== 2. 动态CacheManager（核心改造） ==========
     @Bean
+    @Primary
     public CacheManager dynamicCacheManager(CacheDegradeProxy cacheDegradeProxy) {
         // 缓存名称 -> 过期时间（秒）映射
         Map<String, Long> cacheExpireMap = new HashMap<>();

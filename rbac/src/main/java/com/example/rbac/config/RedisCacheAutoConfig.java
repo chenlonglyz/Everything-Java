@@ -48,27 +48,4 @@ public class RedisCacheAutoConfig {
         return CacheTypeEnum.REDIS;
     }
 
-    /**
-     * 配置Redis缓存管理器（设置过期时间，防止缓存雪崩）
-     */
-    @Bean
-    public RedisCacheManager cacheManager(RedisConnectionFactory connectionFactory) {
-        // 配置序列化
-        RedisCacheConfiguration config = RedisCacheConfiguration.defaultCacheConfig()
-                .entryTtl(Duration.ofHours(2)) // 缓存过期时间2小时
-                .serializeKeysWith(RedisSerializationContext.SerializationPair.fromSerializer(new StringRedisSerializer()))
-                .serializeValuesWith(
-                        RedisSerializationContext.SerializationPair
-                                .fromSerializer(RedisSerializer.json())
-                )
-                .disableCachingNullValues(); // 禁止缓存null值
-
-        // 针对不同缓存设置不同过期时间
-        RedisCacheManager.RedisCacheManagerBuilder builder = RedisCacheManager.builder(connectionFactory)
-                .cacheDefaults(config)
-                .withCacheConfiguration("rbac:perm", RedisCacheConfiguration.defaultCacheConfig().entryTtl(Duration.ofHours(1)))
-                .withCacheConfiguration("rbac:resource", RedisCacheConfiguration.defaultCacheConfig().entryTtl(Duration.ofMinutes(30)));
-
-        return builder.build();
-    }
 }

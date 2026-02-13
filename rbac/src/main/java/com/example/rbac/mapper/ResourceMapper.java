@@ -3,15 +3,13 @@ package com.example.rbac.mapper;
 import java.util.List;
 import java.util.Map;
 
-import org.springframework.stereotype.Repository;
-
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.example.rbac.entity.Resource;
 import org.apache.ibatis.annotations.Param;
 
-@Repository
+
 public interface ResourceMapper extends BaseMapper<Resource> {
 
     /**

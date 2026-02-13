@@ -8,8 +8,6 @@ import org.springframework.stereotype.Component;
 import com.example.rbac.config.RedisHealthIndicator;
 import com.example.rbac.enums.CacheTypeEnum;
 
-@Component
-@ConditionalOnClass(RedisTemplate.class)
 public class CacheDegradeProxy implements CacheService {
     private RedisCacheServiceImpl redisCacheService;
     private final CaffeineCacheServiceImpl caffeineCacheService;

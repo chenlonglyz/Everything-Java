@@ -1,21 +1,23 @@
 package com.example.rbac.config;
 
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.actuate.health.Health;
+import org.springframework.boot.actuate.health.HealthIndicator;
+import org.springframework.boot.actuate.health.Status;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
-import org.springframework.boot.health.contributor.Health;
-import org.springframework.boot.health.contributor.HealthIndicator;
-import org.springframework.boot.health.contributor.Status;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.data.redis.connection.RedisConnection;
 import org.springframework.data.redis.core.RedisCallback;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Component;
 
 @Component
-@ConditionalOnBean(RedisTemplate.class)
+@ConditionalOnClass(RedisTemplate.class)
 public class RedisHealthIndicator implements HealthIndicator {
 
     private final RedisTemplate<String, Object> redisTemplate;
 
-    public RedisHealthIndicator(RedisTemplate<String, Object> redisTemplate) {
+    public RedisHealthIndicator(@Autowired(required = false) RedisTemplate<String, Object> redisTemplate) {
         this.redisTemplate = redisTemplate;
     }
 
@@ -23,9 +25,11 @@ public class RedisHealthIndicator implements HealthIndicator {
     public Health health() {
         try {
             redisTemplate.execute((RedisCallback<String>) RedisConnection::ping);
-            return Health.up().build();
+            return Health.up().withDetail("redis", "available").build();
         } catch (Exception e) {
-            return Health.down(e).build();
+            return Health.down(e)
+                    .withDetail("redis", "unavailable")
+                    .build();
         }
     }
 
@@ -33,8 +37,6 @@ public class RedisHealthIndicator implements HealthIndicator {
      * 判断Redis是否可用
      */
     public boolean isRedisAvailable() {
-        Health health = health();
-        return health != null && health.getStatus().getCode().equals(Status.UP.getCode());
+        return Status.UP.equals(health().getStatus());
     }
 }
-

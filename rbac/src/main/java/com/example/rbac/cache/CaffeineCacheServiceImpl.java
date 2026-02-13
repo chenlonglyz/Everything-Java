@@ -8,7 +8,6 @@ import com.github.benmanes.caffeine.cache.Cache;
 /**
  * Caffeine缓存实现
  */
-@Component
 public class CaffeineCacheServiceImpl implements CacheService {
     private final Cache<String, Object> caffeineCache;
 
