@@ -16,6 +16,7 @@ import org.springframework.data.redis.serializer.StringRedisSerializer;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 import com.example.rbac.cache.CacheDegradeProxy;
 import com.example.rbac.cache.CaffeineCacheServiceImpl;
@@ -63,22 +64,27 @@ public class DynamicCacheConfig {
     // ========== 2. 动态CacheManager（核心改造） ==========
     @Bean
     @Primary
-    public CacheManager dynamicCacheManager(CacheDegradeProxy cacheDegradeProxy) {
-        // 缓存名称 -> 过期时间（秒）映射
-        Map<String, Long> cacheExpireMap = new HashMap<>();
-        cacheExpireMap.put("rbac:perm", 3600L); // 1小时
-        cacheExpireMap.put("rbac:resource", 1800L); // 30分钟
+    public CacheManager dynamicCacheManager(CacheDegradeProxy proxy) {
+
+        Map<String, Long> cacheExpireMap = Map.of(
+                "rbac:perm", 3600L,
+                "rbac:resource", 1800L
+        );
+
+        ConcurrentHashMap<String, Cache> cacheMap = new ConcurrentHashMap<>();
 
         return new CacheManager() {
+
             @Override
-            public Cache getCache(@NonNull String name) {
-                // 为每个缓存名称创建自定义DegradeCache实例
-                Long expireSeconds = cacheExpireMap.getOrDefault(name, 3600L);
-                return new DegradeCache(name, expireSeconds, cacheDegradeProxy);
+            public Cache getCache(String name) {
+                return cacheMap.computeIfAbsent(name, n -> {
+                    Long expire = cacheExpireMap.getOrDefault(n, 3600L);
+                    return new DegradeCache(n, expire, proxy);
+                });
             }
 
             @Override
-            public @NonNull Collection<String> getCacheNames() {
+            public Collection<String> getCacheNames() {
                 return cacheExpireMap.keySet();
             }
         };

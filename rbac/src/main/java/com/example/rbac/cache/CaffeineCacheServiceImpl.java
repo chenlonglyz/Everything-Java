@@ -2,6 +2,7 @@ package com.example.rbac.cache;
 
 import org.springframework.stereotype.Component;
 
+import com.example.rbac.config.CacheValueWrapper;
 import com.example.rbac.enums.CacheTypeEnum;
 import com.github.benmanes.caffeine.cache.Cache;
 
@@ -9,6 +10,7 @@ import com.github.benmanes.caffeine.cache.Cache;
  * Caffeine缓存实现
  */
 public class CaffeineCacheServiceImpl implements CacheService {
+
     private final Cache<String, Object> caffeineCache;
 
     public CaffeineCacheServiceImpl(Cache<String, Object> caffeineCache) {
@@ -17,15 +19,17 @@ public class CaffeineCacheServiceImpl implements CacheService {
 
     @Override
     public void set(String key, Object value, long expireSeconds) {
-        // Caffeine的过期时间在初始化时已配置，这里忽略expireSeconds（也可动态设置）
-        caffeineCache.put(key, value);
+        caffeineCache.put(key, new CacheValueWrapper(value, expireSeconds));
     }
 
     @Override
     @SuppressWarnings("unchecked")
     public <T> T get(String key, Class<T> clazz) {
-        Object value = caffeineCache.getIfPresent(key);
-        return value != null ? (T) value : null;
+        Object wrapper = caffeineCache.getIfPresent(key);
+        if (wrapper instanceof CacheValueWrapper valueWrapper) {
+            return (T) valueWrapper.getValue();
+        }
+        return null;
     }
 
     @Override
@@ -36,5 +40,9 @@ public class CaffeineCacheServiceImpl implements CacheService {
     @Override
     public CacheTypeEnum getCacheType() {
         return CacheTypeEnum.CAFFEINE;
+    }
+
+    public void clear() {
+        caffeineCache.invalidateAll();
     }
 }

@@ -1,9 +1,6 @@
 package com.example.rbac.cache;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
-import org.springframework.data.redis.core.RedisTemplate;
-import org.springframework.stereotype.Component;
 
 import com.example.rbac.config.RedisHealthIndicator;
 import com.example.rbac.enums.CacheTypeEnum;
@@ -30,7 +27,7 @@ public class CacheDegradeProxy implements CacheService {
     @Override
     public void set(String key, Object value, long expireSeconds) {
         // 双写：Redis可用时写Redis+本地，不可用时只写本地
-        if (redisHealthIndicator !=null && redisHealthIndicator.isRedisAvailable()) {
+        if (redisHealthIndicator !=null && redisHealthIndicator.isRedisAvailable() && redisCacheService != null) {
             redisCacheService.set(key, value, expireSeconds);
         }
         caffeineCacheService.set(key, value, expireSeconds);
@@ -39,7 +36,7 @@ public class CacheDegradeProxy implements CacheService {
     @Override
     public <T> T get(String key, Class<T> clazz) {
         // 读：Redis可用时读Redis，不可用时读本地
-        if (redisHealthIndicator !=null && redisHealthIndicator.isRedisAvailable()) {
+        if (redisHealthIndicator !=null && redisHealthIndicator.isRedisAvailable()&& redisCacheService != null) {
             T value = redisCacheService.get(key, clazz);
             // Redis未命中时，读本地并回写Redis
             if (value == null) {
@@ -57,7 +54,7 @@ public class CacheDegradeProxy implements CacheService {
     @Override
     public void delete(String key) {
         // 双删：Redis可用时删Redis+本地，不可用时只删本地
-        if (redisHealthIndicator !=null && redisHealthIndicator.isRedisAvailable()) {
+        if (redisHealthIndicator !=null && redisHealthIndicator.isRedisAvailable()&& redisCacheService != null) {
             redisCacheService.delete(key);
         }
         caffeineCacheService.delete(key);
@@ -66,5 +63,14 @@ public class CacheDegradeProxy implements CacheService {
     @Override
     public CacheTypeEnum getCacheType() {
         return redisHealthIndicator !=null && redisHealthIndicator.isRedisAvailable() ? CacheTypeEnum.REDIS : CacheTypeEnum.CAFFEINE;
+    }
+
+    public void clearByPrefix(String prefix) {
+        caffeineCacheService.clear();
+        if (redisCacheService != null
+                && redisHealthIndicator != null
+                && redisHealthIndicator.isRedisAvailable()) {
+            // 可用 scan + delete
+        }
     }
 }

@@ -1,6 +1,7 @@
 package com.example.rbac.cache;
 
 import java.util.concurrent.Callable;
+import java.util.concurrent.ThreadLocalRandom;
 
 import jakarta.annotation.Nullable;
 
@@ -69,7 +70,7 @@ public class DegradeCache implements Cache {
         try {
             value = valueLoader.call();
             if (value != null) {
-                cacheDegradeProxy.set(fullKey, value, this.expireSeconds);
+                cacheDegradeProxy.set(fullKey, value , randomExpire(this.expireSeconds));
             }
             return value;
         }
@@ -112,8 +113,10 @@ public class DegradeCache implements Cache {
 
     @Override
     public void clear() {
-        // 清空缓存（@CacheEvict(allEntries=true)触发）
-        // 注意：Caffeine不支持批量清空，需遍历删除；Redis可批量删除
-        throw new UnsupportedOperationException("批量清空缓存请直接调用CacheDegradeProxy的批量删除方法");
+        cacheDegradeProxy.clearByPrefix(this.name + "::");
+    }
+
+    private long randomExpire(long baseExpire) {
+        return baseExpire + ThreadLocalRandom.current().nextLong(60);
     }
 }

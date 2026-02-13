@@ -13,6 +13,7 @@ import com.example.rbac.cache.CaffeineCacheServiceImpl;
 import com.example.rbac.cache.RedisCacheServiceImpl;
 import com.example.rbac.enums.CacheTypeEnum;
 import com.github.benmanes.caffeine.cache.Caffeine;
+import com.github.benmanes.caffeine.cache.Expiry;
 
 /**
  * Caffeine缓存配置：
@@ -28,9 +29,30 @@ public class CaffeineCacheAutoConfig {
     @ConditionalOnMissingBean(RedisCacheServiceImpl.class)
     public com.github.benmanes.caffeine.cache.Cache<String, Object> caffeineCache() {
         return Caffeine.newBuilder()
-                .maximumSize(10000) // 最大缓存数
-                .expireAfterWrite(30, TimeUnit.MINUTES) // 写入后30分钟过期
-                .recordStats() // 统计命中率
+                .maximumSize(10000)
+                .expireAfter(new Expiry<String, Object>() {
+
+                    @Override
+                    public long expireAfterCreate(String key, Object value, long currentTime) {
+                        if (value instanceof CacheValueWrapper wrapper) {
+                            return TimeUnit.SECONDS.toNanos(wrapper.getExpireSeconds());
+                        }
+                        return TimeUnit.MINUTES.toNanos(30);
+                    }
+
+                    @Override
+                    public long expireAfterUpdate(String key, Object value,
+                                                  long currentTime, long currentDuration) {
+                        return expireAfterCreate(key, value, currentTime);
+                    }
+
+                    @Override
+                    public long expireAfterRead(String key, Object value,
+                                                long currentTime, long currentDuration) {
+                        return currentDuration;
+                    }
+                })
+                .recordStats()
                 .build();
     }
 
