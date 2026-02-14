@@ -1,5 +1,9 @@
 package com.example.rbac.config;
 
+import java.util.Collection;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.cache.Cache;
@@ -13,16 +17,10 @@ import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.serializer.RedisSerializer;
 import org.springframework.data.redis.serializer.StringRedisSerializer;
 
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-
 import com.example.rbac.cache.CacheDegradeProxy;
 import com.example.rbac.cache.CaffeineCacheServiceImpl;
 import com.example.rbac.cache.DegradeCache;
 import com.example.rbac.cache.RedisCacheServiceImpl;
-import org.checkerframework.checker.nullness.qual.NonNull;
 
 @Configuration
 @EnableCaching // 必须开启，否则Spring Cache注解无效

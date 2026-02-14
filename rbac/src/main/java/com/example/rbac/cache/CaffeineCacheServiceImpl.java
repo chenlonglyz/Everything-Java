@@ -1,7 +1,5 @@
 package com.example.rbac.cache;
 
-import org.springframework.stereotype.Component;
-
 import com.example.rbac.config.CacheValueWrapper;
 import com.example.rbac.enums.CacheTypeEnum;
 import com.github.benmanes.caffeine.cache.Cache;
