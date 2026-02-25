@@ -1,0 +1,35 @@
+server:
+  tomcat:
+    # 开启访问日志
+    accesslog:
+      enabled: true          # 开启访问日志
+      directory: /Users/chenlong/development/jack/ideaproject/Everything-Java/performance-research-lab/health-check-api-concurrency-tuning/logs      # 日志存放目录
+      prefix: tomcat_access  # 日志文件前缀
+      suffix: .log           # 日志文件后缀
+      pattern: "%h %l %u %t \"%r\" %s %b \"%{Referer}i\" \"%{User-Agent}i\" %D"  # 日志格式
+    #建立连接后等待请求数据的时间 单位ms
+    connection-timeout: 5000
+    threads:
+      #最大工作线程数 每个请求占用一个线程 决定最大并发处理能力
+      max: 32
+      #最小空闲线程	避免高峰创建线程抖动
+      min-spare: 8
+      #KeepAlive 空闲时间 单位ms
+    keep-alive-timeout: 60000
+    #线程满时，请求排队队列长度 超过后直接拒绝连接
+    accept-count: 1000
+    #默认（NIO）：最大 TCP 连接数 包括 keep-alive 连接
+    max-connections: 10000
+    #单连接最大复用次数
+    max-keep-alive-requests: 1000
+    processor-cache: 2000
+logging:
+  level:
+    # 开启Tomcat连接器调试日志
+    org.apache.coyote.http11.Http11NioProtocol: ERROR
+    # 开启Tomcat线程池日志
+    org.apache.tomcat.util.threads: DEBUG
+    # 连接管理日志（看连接被拒绝/重置的原因）
+    org.apache.tomcat.util.net: DEBUG
+    # HTTP 协议日志（看请求处理的完整链路）
+    org.apache.coyote.http11: DEBUG
