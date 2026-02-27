@@ -1,11 +1,19 @@
-package com.example.rbac.cache;
+package com.example.cachecomponents.core;
 
-import com.example.rbac.config.CacheValueWrapper;
-import com.example.rbac.enums.CacheTypeEnum;
 import com.github.benmanes.caffeine.cache.Cache;
 
 /**
- * Caffeine缓存实现
+ * Caffeine本地缓存实现
+ *
+ * <p>
+ * 特点：
+ * - 基于JVM内存
+ * - 访问速度快
+ * - 适合热点数据
+ *
+ * 注意：
+ * - 不支持分布式
+ * - 服务重启会丢失数据
  */
 public class CaffeineCacheServiceImpl implements CacheService {
 
@@ -22,7 +30,7 @@ public class CaffeineCacheServiceImpl implements CacheService {
 
     @Override
     @SuppressWarnings("unchecked")
-    public <T> T get(String key, Class<T> clazz) {
+    public <T> T get(String key) {
         Object wrapper = caffeineCache.getIfPresent(key);
         if (wrapper instanceof CacheValueWrapper valueWrapper) {
             return (T) valueWrapper.getValue();

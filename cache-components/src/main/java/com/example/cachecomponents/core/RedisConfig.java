@@ -1,4 +1,7 @@
-package com.example.rbac.config;
+package com.example.cachecomponents.core;
+
+import java.time.Duration;
+
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Bean;
@@ -13,13 +16,25 @@ import org.springframework.data.redis.connection.lettuce.LettucePoolingClientCon
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.serializer.GenericJackson2JsonRedisSerializer;
 import org.springframework.data.redis.serializer.StringRedisSerializer;
+
 import io.lettuce.core.ReadFrom;
 import io.lettuce.core.resource.ClientResources;
 import io.lettuce.core.resource.DefaultClientResources;
 import org.apache.commons.pool2.impl.GenericObjectPoolConfig;
 
-import java.time.Duration;
-
+/**
+ * Redis连接配置类
+ *
+ * <p>
+ * 功能：
+ * - 配置主从连接
+ * - 配置连接池
+ * - 配置序列化方式
+ *
+ * 架构支持：
+ * - 主写从读
+ * - Lettuce连接池
+ */
 @Configuration
 public class RedisConfig {
 

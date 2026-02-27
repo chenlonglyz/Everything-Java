@@ -1,4 +1,4 @@
-package com.example.rbac.config;
+package com.example.cachecomponents.core;
 
 import java.util.concurrent.TimeUnit;
 
@@ -7,9 +7,6 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
 
-import com.example.rbac.cache.CaffeineCacheServiceImpl;
-import com.example.rbac.cache.RedisCacheServiceImpl;
-import com.example.rbac.enums.CacheTypeEnum;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.github.benmanes.caffeine.cache.Expiry;
 

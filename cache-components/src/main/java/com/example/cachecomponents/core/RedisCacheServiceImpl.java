@@ -1,12 +1,23 @@
-package com.example.rbac.cache;
+package com.example.cachecomponents.core;
 
 import java.util.concurrent.TimeUnit;
 
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.ValueOperations;
 
-import com.example.rbac.enums.CacheTypeEnum;
-
+/**
+ * Redis缓存实现
+ *
+ * <p>
+ * 特点：
+ * - 分布式
+ * - 支持持久化
+ * - 多节点共享
+ *
+ * 适合：
+ * - 多实例部署
+ * - 需要高一致性的缓存场景
+ */
 public class RedisCacheServiceImpl implements CacheService {
     private final RedisTemplate<String, Object> redisTemplate;
 
@@ -21,8 +32,7 @@ public class RedisCacheServiceImpl implements CacheService {
     }
 
     @Override
-    @SuppressWarnings("unchecked")
-    public <T> T get(String key, Class<T> clazz) {
+    public <T> T get(String key) {
         ValueOperations<String, Object> valueOps = redisTemplate.opsForValue();
         Object value = valueOps.get(key);
         return value != null ? (T) value : null;

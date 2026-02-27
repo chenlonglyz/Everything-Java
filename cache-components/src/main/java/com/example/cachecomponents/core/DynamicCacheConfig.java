@@ -1,10 +1,11 @@
-package com.example.rbac.config;
+package com.example.cachecomponents.core;
 
 import java.util.Collection;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.actuate.data.redis.RedisHealthIndicator;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.cache.Cache;
 import org.springframework.cache.CacheManager;
@@ -17,11 +18,19 @@ import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.serializer.RedisSerializer;
 import org.springframework.data.redis.serializer.StringRedisSerializer;
 
-import com.example.rbac.cache.CacheDegradeProxy;
-import com.example.rbac.cache.CaffeineCacheServiceImpl;
-import com.example.rbac.cache.DegradeCache;
-import com.example.rbac.cache.RedisCacheServiceImpl;
-
+/**
+ * 动态缓存管理配置类
+ *
+ * <p>
+ * 功能：
+ * - 动态创建CacheManager
+ * - 根据缓存名称分配不同过期时间
+ * - 统一使用DegradeCache封装双缓存逻辑
+ *
+ * 优势：
+ * - 支持不同缓存不同TTL
+ * - 支持Redis自动降级
+ */
 @Configuration
 @EnableCaching // 必须开启，否则Spring Cache注解无效
 public class DynamicCacheConfig {
@@ -50,12 +59,10 @@ public class DynamicCacheConfig {
     }
 
     @Bean
-    public CacheDegradeProxy cacheDegradeProxy(@Autowired(required = false) RedisHealthIndicator redisHealthIndicator,
-                                               CaffeineCacheServiceImpl caffeineCacheService,
+    public CacheDegradeProxy cacheDegradeProxy(CaffeineCacheServiceImpl caffeineCacheService,
                                                @Autowired(required = false)RedisCacheServiceImpl redisCacheService) {
         CacheDegradeProxy proxy = new CacheDegradeProxy(caffeineCacheService);
         proxy.setRedisCacheService(redisCacheService);
-        proxy.setRedisHealthIndicator(redisHealthIndicator);
         return proxy;
     }
 

@@ -1,9 +1,20 @@
-package com.example.rbac.cache;
+package com.example.cachecomponents.core;
 
-import com.example.rbac.enums.CacheTypeEnum;
 
 /**
- * 统一缓存接口：所有缓存操作通过该接口，底层实现由配置决定
+ * 统一缓存接口
+ *
+ * <p>
+ * 所有缓存操作必须通过该接口进行，
+ * 底层实现可以是：
+ * - Redis
+ * - Caffeine
+ * - Redis + Caffeine 组合
+ *
+ * 设计目的：
+ * - 解耦缓存实现
+ * - 便于扩展
+ * - 便于降级
  */
 public interface CacheService {
     /**
@@ -14,7 +25,7 @@ public interface CacheService {
     /**
      * 获取缓存
      */
-    <T> T get(String key, Class<T> clazz);
+    <T> T get(String key);
 
     /**
      * 删除缓存
